@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cuisine Matcher</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+            }
+            #wrapper {
+                margin-bottom: 10px;
+            }
+            .boxCont {
+                margin: 5px 0;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Check your refrigerator. What can you create?</h1>
+        <form id="ingredientsForm">
+            <div id="wrapper">
+                <div class="boxCont">
+                    <input type="checkbox" value="0" class="checkbox">
+                    <label>apple</label>
+                </div>
+
+                <div class="boxCont">
+                    <input type="checkbox" value="1" class="checkbox">
+                    <label>pear</label>
+                </div>
+
+                <div class="boxCont">
+                    <input type="checkbox" value="2" class="checkbox">
+                    <label>cherry</label>
+                </div>
+
+                <div class="boxCont">
+                    <input type="checkbox" value="3" class="checkbox">
+                    <label>fenugreek</label>
+                </div>
+
+                <div class="boxCont">
+                    <input type="checkbox" value="4" class="checkbox">
+                    <label>sake</label>
+                </div>
+
+                <div class="boxCont">
+                    <input type="checkbox" value="5" class="checkbox">
+                    <label>soy sauce</label>
+                </div>
+
+                <div class="boxCont">
+                    <input type="checkbox" value="6" class="checkbox">
+                    <label>cumin</label>
+                </div>
+            </div>
+
+            <button type="button" onClick="startInference()">What kind of cuisine can you make?</button>
+        </form>
+
+        <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.9.0/dist/ort.min.js"></script>
+
+        <script>
+            const ingredients = Array(380).fill(0);
+
+            const checks = [...document.querySelectorAll('.checkbox')];
+
+            checks.forEach(check => {
+                check.addEventListener('change', function() {
+                    ingredients[parseInt(check.value)] = check.checked ? 1 : 0;
+                });
+            });
+
+            function testCheckboxes() {
+                return checks.some(check => check.checked);
+            }
+
+            async function startInference() {
+                let atLeastOneChecked = testCheckboxes();
+        
+                if (!atLeastOneChecked) {
+                    alert('Please select at least one ingredient.');
+                    return;
+                }
+
+                try {
+                    const session = await ort.InferenceSession.create('./model.onnx');
+
+                    const input = new ort.Tensor(new Float32Array(ingredients), [1, 380]);
+                    const feeds = { float_input: input };
+        
+                    const results = await session.run(feeds);
+
+                    alert('You can enjoy ' + results.label.data[0] + ' cuisine today!');
+                } catch (e) {
+    console.log('Failed to inference ONNX model');
+    console.error(e);  // <-- this line is important
+}
+
+            }
+        </script>
+    </body>
+</html>
